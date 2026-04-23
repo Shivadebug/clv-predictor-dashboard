@@ -2,8 +2,6 @@ import streamlit as st
 import numpy as np
 import pickle
 import lzma
-import pandas as pd
-import matplotlib.pyplot as plt
 
 # ==============================
 # LOAD MODEL
@@ -19,6 +17,7 @@ st.set_page_config(page_title="CLV Predictor", layout="wide")
 # TITLE
 # ==============================
 st.title("💰 Customer Lifetime Value Dashboard")
+
 st.markdown("Predict how valuable a customer is for your business.")
 
 # ==============================
@@ -33,6 +32,7 @@ with col1:
     age = st.slider("Age", 18, 80, 30)
     tenure = st.slider("Tenure (Years with Bank)", 0, 10, 5)
     balance = st.number_input("Account Balance", value=50000.0)
+
     products = st.selectbox("Number of Bank Products", [1,2,3,4])
 
 with col2:
@@ -40,7 +40,8 @@ with col2:
 
     active = st.selectbox(
         "Is Active Customer?",
-        ["No", "Yes"]
+        ["No", "Yes"],
+        help="Active customers use bank services frequently"
     )
 
     gender = st.selectbox("Gender", ["Female", "Male"])
@@ -52,11 +53,12 @@ with col2:
 
     has_card = st.selectbox(
         "Has Credit Card?",
-        ["No", "Yes"]
+        ["No", "Yes"],
+        help="Yes = Customer owns a credit card"
     )
 
 # ==============================
-# ENCODING
+# ENCODING (IMPORTANT)
 # ==============================
 gender = 1 if gender == "Male" else 0
 active = 1 if active == "Yes" else 0
@@ -77,7 +79,7 @@ if st.button("🔍 Predict CLV"):
     input_scaled = scaler.transform(input_data)
     raw_pred = model.predict(input_scaled)[0]
 
-    # Custom CLV logic
+    # 🔥 FIX: Adjust prediction (rescale + realistic boost)
     prediction = (
         (balance * 0.3) +
         (salary * 0.5) +
@@ -86,6 +88,7 @@ if st.button("🔍 Predict CLV"):
         (active * 10000)
     )
 
+    # small influence from model
     prediction += raw_pred * 50
 
     # ==============================
@@ -110,47 +113,7 @@ if st.button("🔍 Predict CLV"):
     colB.metric("Customer Type", cust_type)
     colC.metric("Risk Level", risk)
 
-    # ==============================
-    # 📊 GRAPH 1: CLV Breakdown
-    # ==============================
-    st.subheader("📊 CLV Contribution Breakdown")
-
-    data = {
-        "Factor": ["Balance", "Salary", "Tenure", "Products", "Activity"],
-        "Contribution": [
-            balance * 0.3,
-            salary * 0.5,
-            tenure * 2000,
-            products * 5000,
-            active * 10000
-        ]
-    }
-
-    df = pd.DataFrame(data)
-
-    fig, ax = plt.subplots()
-    ax.bar(df["Factor"], df["Contribution"])
-    ax.set_title("CLV Contribution by Factors")
-
-    st.pyplot(fig)
-
-    # ==============================
-    # 📊 GRAPH 2: Customer Profile
-    # ==============================
-    st.subheader("📊 Customer Profile Overview")
-
-    profile_data = {
-        "Feature": ["Credit Score", "Age", "Tenure", "Products"],
-        "Value": [credit_score, age, tenure, products]
-    }
-
-    df2 = pd.DataFrame(profile_data)
-
-    fig2, ax2 = plt.subplots()
-    ax2.plot(df2["Feature"], df2["Value"], marker='o')
-
-    st.pyplot(fig2)
-
+   
     # ==============================
     # SUMMARY
     # ==============================
@@ -163,28 +126,28 @@ if st.button("🔍 Predict CLV"):
     🔹 **Risk Level:** {risk}  
 
     📌 **Insights:**
-    - Higher salary & balance → higher value  
-    - Long-term customers → more profitable  
+    - Customers with higher salary & balance → higher value  
+    - Long-term customers (tenure) → more profitable  
     - Active users → better retention  
 
     📊 **Recommended Action:**
     - High Value → Offer premium benefits  
     - Medium Value → Upsell services  
-    - Low Value → Improve engagement  
+    - Low Value → Improve engagement strategies  
     """)
 
 # ==============================
-# SIDEBAR
+# SIDEBAR (USEFUL INFO)
 # ==============================
 st.sidebar.title("📌 How to Use")
 
 st.sidebar.write("""
 1. Enter customer details  
-2. Click Predict  
-3. View results & graphs  
+2. Click **Predict CLV**  
+3. View customer value & insights  
 
-This tool helps identify:
+This tool helps banks identify:
 ✔ Valuable customers  
-✔ Risk levels  
 ✔ Retention strategies  
+✔ Risk levels  
 """)
